@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    env:
+      GOARCH: arm64
+      GOOS: android
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+
+      - name: Build
+        run: |
+          go build -o dist/iris_installer main.go
+
+      - name: Delete old Resume
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ github.token }}
+          tag: main
+          assets: '*.*'
+          fail-if-no-assets: false
+          fail-if-no-release: false
+        if: github.ref == 'refs/heads/main'
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          files: dist/iris_installer
+          tag_name: main
